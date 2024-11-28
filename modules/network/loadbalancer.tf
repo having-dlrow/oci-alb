@@ -21,7 +21,7 @@ resource "oci_load_balancer_backend_set" "app_http_backend_set" {
   policy           = "ROUND_ROBIN"
 
   health_checker {
-    protocol          = "TCP"
+    protocol          = "HTTP"
     port              = 80
     retries           = 3
     return_code       = 200
@@ -76,11 +76,12 @@ resource "oci_load_balancer_hostname" "app_hostname" {
 # }
 
 resource "oci_load_balancer_listener" "nginx_http_listener" {
-  default_backend_set_name = oci_load_balancer_backend_set.app_http_backend_set.name
-  name                     = "nginx_HTTP_listener"
   load_balancer_id         = oci_load_balancer_load_balancer.app_load_balancer.id
+  name                     = "nginx_HTTP_listener"
+  default_backend_set_name = oci_load_balancer_backend_set.app_http_backend_set.name
+  hostname_names           = [oci_load_balancer_hostname.app_hostname.name]
   port                     = 80
-  protocol                 = "TCP"
+  protocol                 = "HTTP"
 
   # hostname_names         = [oci_load_balancer_hostname.app_hostname.name]
   # rule_set_names         = [oci_load_balancer_rule_set.app_lb_rule_set.name]
@@ -90,15 +91,15 @@ resource "oci_load_balancer_listener" "nginx_http_listener" {
 }
 
 resource "oci_load_balancer_listener" "nginx_https_listener" {
-  default_backend_set_name = oci_load_balancer_backend_set.app_https_backend_set.name
-  name                     = "nginx_HTTPS_listener"
   load_balancer_id         = oci_load_balancer_load_balancer.app_load_balancer.id
+  name                     = "nginx_HTTPS_listener"
+  default_backend_set_name = oci_load_balancer_backend_set.app_https_backend_set.name
   port                     = 443
-  # protocol                 = "HTTP"
-  protocol = "TCP"
+  protocol                 = "HTTP"
+  # protocol = "TCP"
 
-  # ssl_configuration {
-  #   certificate_name        = oci_load_balancer_certificate.load_balancer_certificate.certificate_name
-  #   verify_peer_certificate = false
-  # }
+  ssl_configuration {
+    certificate_name        = oci_load_balancer_certificate.load_balancer_certificate.certificate_name
+    verify_peer_certificate = false
+  }
 }

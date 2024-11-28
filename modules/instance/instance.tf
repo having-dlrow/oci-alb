@@ -89,8 +89,10 @@ resource "oci_core_instance" "app_node" {
 
   create_vnic_details {
     subnet_id        = var.app_subnet_id # module.oci-network
+    display_name     = "primaryvnic"
     assign_ipv6ip    = false
     assign_public_ip = true
+    hostname_label   = "app_node${count.index}"
   }
 
   metadata = {

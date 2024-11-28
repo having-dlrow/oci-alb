@@ -7,6 +7,17 @@ resource "oci_core_virtual_network" "app_vcn" {
   dns_label      = "appvcn"
 }
 
+resource "oci_core_subnet" "app_subnet" {
+  cidr_block        = var.subnet_cidr_block
+  display_name      = "app_subnet"
+  dns_label         = "appsubnet"
+  security_list_ids = [oci_core_security_list.app_security_list.id]
+  compartment_id    = var.compartment_id
+  vcn_id            = oci_core_virtual_network.app_vcn.id
+  route_table_id    = oci_core_route_table.app_route_table.id
+  dhcp_options_id   = oci_core_virtual_network.app_vcn.default_dhcp_options_id
+}
+
 # internet_gateway
 resource "oci_core_internet_gateway" "app_gateway" {
   compartment_id = var.compartment_id
@@ -31,9 +42,9 @@ resource "oci_core_route_table" "app_route_table" {
 
 # security list
 resource "oci_core_security_list" "app_security_list" {
-  vcn_id         = oci_core_virtual_network.app_vcn.id
   compartment_id = var.compartment_id
-  display_name   = "app_security_list"
+  vcn_id         = oci_core_virtual_network.app_vcn.id
+  display_name   = "appSecurityList"
 
   dynamic "egress_security_rules" {
     for_each = var.egress_security_rules
@@ -69,30 +80,17 @@ resource "oci_core_security_list" "app_security_list" {
   }
   ingress_security_rules {
     protocol    = "all"
-    source      = oci_core_subnet.app_subnet.cidr_block
+    source      = var.vcn_cidr_block
     source_type = "CIDR_BLOCK"
     description = "Allow subnet for all protocols"
   }
   ingress_security_rules {
     protocol    = 1
-    source      = oci_core_subnet.app_subnet.cidr_block
+    source      = var.vcn_cidr_block
     source_type = "CIDR_BLOCK"
     description = "Allow subnet for ICMP"
     icmp_options {
       type = 3
     }
   }
-}
-
-resource "oci_core_subnet" "app_subnet" {
-  compartment_id = var.compartment_id
-  vcn_id         = oci_core_virtual_network.app_vcn.id
-  display_name   = "app_subnet"
-  dns_label      = "appsubnet"
-
-  cidr_block = var.subnet_cidr_block
-
-  # security_list_ids = [oci_core_security_list.app_security_list.id]
-  route_table_id  = oci_core_route_table.app_route_table.id
-  dhcp_options_id = oci_core_virtual_network.app_vcn.default_dhcp_options_id
 }
