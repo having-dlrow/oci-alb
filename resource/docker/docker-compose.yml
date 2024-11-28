@@ -1,0 +1,118 @@
+volumes:
+  certs:
+  vhost:
+  html:
+  acme:
+  keycloak_data:
+  mysql_data:
+
+services:
+  nginx:
+    platform: linux/aarch64
+    image: ${NGINX_IMAGE}
+    container_name: ${NGINX_CONTAINER_NAME}
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    restart: always
+    ports:
+      - ${PORT1}
+      - ${PORT2}
+    environment:
+      - TZ=Asia/Seoul
+    labels:
+      - "com.github.nginx-proxy.nginx"
+    volumes:
+      # - ./nginx/default.conf:/etc/nginx/default.conf
+      - ${VOLUME1}
+      - ${VOLUME2}
+      - ${VOLUME3}
+      - ${VOLUME4}
+    network_mode: host
+
+  acme:
+    platform: linux/aarch64
+    image: ${ACME_IMAGE}
+    container_name: ${ACME_CONTAINER_NAME}
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    restart: always
+    environment:
+      DEFAULT_EMAIL: ${DEFAULT_EMAIL}
+      ACME_CHALLENGE: DNS-01
+      DEBUG: 1
+      NGINX_PROXY_CONTAINER: ${NGINX_CONTAINER_NAME}
+      ACMESH_DNS_API_CONFIG: |-
+        DNS_API: dns_cf
+        CF_Key: ${CF_KEY}
+        CF_Email: ${DEFAULT_EMAIL}
+    depends_on:
+      - nginx
+    volumes_from:
+      - nginx:rw
+    volumes:
+      - ${VOLUME1}
+      - ${VOLUME5}
+      - ${VOLUME6}
+    network_mode: host
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    # healthcheck:
+    #   test: [ "CMD", "curl", "-f", "http://localhost:8080/health/ready" ]
+    #   interval: 15s
+    #   timeout: 5s
+    #   retries: 15
+    command:
+      - start
+      - --proxy-headers=xforwarded
+      - --http-relative-path=/auth
+    env_file: .env
+    environment:
+      - HTTPS_METHOD=noredirect
+      - VIRTUAL_HOST=keycloak.ha-ving.store
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=keycloak.ha-ving.store
+      - LETSENCRYPT_EMAIL=hoban4336@gmail.com
+    ports:
+      - 8080:8080
+      - 8443:8443
+      - 9000:9000
+    volumes:
+      - "certs:/opt/certs"
+    depends_on:
+      - mysql
+    network_mode: host
+
+  mysql:
+    image: ${MYSQL_IMAGE}
+    container_name: ${MYSQL_CONTAINER_NAME}
+    volumes:
+      - ${MYSQL_VOLUME1}
+      - ${MYSQL_VOLUME2}
+    env_file: .env
+    environment:
+      - TZ=Asia/Seoul
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    ports:
+      - ${MYSQL_PORT}
+    network_mode: host
