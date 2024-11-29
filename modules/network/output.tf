@@ -3,7 +3,7 @@ output "lb_id" {
 }
 
 output "lb_public_ip" {
-  value = [oci_load_balancer_load_balancer.app_load_balancer.ip_address_details]
+  value = [for detail in oci_load_balancer_load_balancer.app_load_balancer.ip_address_details : detail.ip_address]
 }
 
 output "app_subnet_id" {

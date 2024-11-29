@@ -21,6 +21,7 @@ resource "tls_private_key" "compute_ssh_key" {
 locals {
   docker_source = "./resource/docker"
   docker_init   = "./resource/scripts/init-docker.tpl"
+  iptable_init  = "./resource/files/rules.v4"
 }
 
 resource "oci_core_instance" "app_node" {
@@ -89,10 +90,9 @@ resource "oci_core_instance" "app_node" {
 
   create_vnic_details {
     subnet_id        = var.app_subnet_id # module.oci-network
-    display_name     = "primaryvnic"
     assign_ipv6ip    = false
     assign_public_ip = true
-    hostname_label   = "app_node${count.index}"
+    hostname_label   = "appnode${count.index}"
   }
 
   metadata = {
@@ -100,37 +100,40 @@ resource "oci_core_instance" "app_node" {
     user_data           = "${base64encode(templatefile(local.docker_init, { docker_secret_key = var.docker_secret_key }))}"
   }
 
+  connection {
+    host        = self.public_ip
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.ssh_private_key)
+    timeout     = "3m"
+    agent       = false
+  }
+
   provisioner "file" {
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.ssh_private_key)
-      timeout     = "3m"
-      agent       = false
-    }
+    content = templatefile(local.iptable_init, {
+      my_public_ip   = var.my_public_ip
+      vcn_cidr_block = var.vcn_cidr_block
+    })
+    destination = "/tmp/rules.v4"
+  }
+
+  provisioner "remote-exec" { inline = ["sudo cp /tmp/rules.v4 /etc/iptables/rules.v4"] }
+
+  provisioner "file" {
     source      = local.docker_source
     destination = "/home/ubuntu/docker"
   }
 
   provisioner "remote-exec" {
-    connection {
-      host        = self.public_ip
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.ssh_private_key)
-      timeout     = "3m"
-      agent       = false
-    }
     inline = [
       "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for Cloud-Init...'; sleep 5; done",
       "sudo docker ps",
       "sudo docker-compose --version",
       "sudo docker-compose --env-file /home/ubuntu/docker/.env -f /home/ubuntu/docker/docker-compose.yml up -d", # Install
-      "sudo iptables -A INPUT -i enp0s6 -p tcp --dport 443 -m state --state NEW,ESTABLISHED -j ACCEPT",
-      "sudo iptables -A INPUT -i enp0s6 -p tcp --dport 80 -m state --state NEW,ESTABLISHED -j ACCEPT",
     ]
   }
+
+  # provisioner "remote-exec" { inline = ["sudo shutdown -r now"] }
 }
 
 # vnic

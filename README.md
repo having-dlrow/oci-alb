@@ -34,3 +34,11 @@ Terraform aply
 | oci_load_balancer_backend_set | app_https_backend_set	| Backend Set (HTTPS) | 443 |
 | oci_load_balancer_backend | app_https_backend | private_ip 연결 | 443 |
 | oci_load_balancer_listener | nginx_https_listener | 외부 허용 포트 | 443 (TCP) |
+
+### oracle 방화벽 허용이 안되는 이슈
+> #### [unable to open amy port except default 22](https://www.reddit.com/r/oraclecloud/comments/srgfxx/unable_to_open_any_port_except_default_22/)
+> 
+> 현상 : subnet 수정 후, instance을 reboot 필요함 (~2024.11.29)
+> <li>/etc/reuls.v4 수정 적용<br>
+> <li>instance 생성 후, reboot 추가<br>
+> <li>instance public ip로 cloudflare 연결<br>

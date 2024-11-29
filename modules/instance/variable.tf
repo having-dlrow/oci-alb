@@ -13,6 +13,12 @@ variable "ssh_private_key" {}
 variable "ssh_public_key" {}
 variable "instance_count" {}
 
+# network
+variable "my_public_ip" {}
+variable "vcn_cidr_block" {
+  default = "192.168.1.0/16"
+}
+
 # argument
 variable "lb_id" {}
 variable "app_subnet_id" {}

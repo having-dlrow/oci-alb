@@ -22,7 +22,7 @@ resource "oci_load_balancer_backend_set" "app_http_backend_set" {
 
   health_checker {
     protocol          = "HTTP"
-    port              = 80
+    port              = 8080
     retries           = 3
     return_code       = 200
     timeout_in_millis = 3000
@@ -36,7 +36,7 @@ resource "oci_load_balancer_backend_set" "app_https_backend_set" {
   policy           = "ROUND_ROBIN"
 
   health_checker {
-    protocol          = "TCP"
+    protocol          = "HTTP"
     port              = 443
     retries           = 3
     return_code       = 200
@@ -79,8 +79,7 @@ resource "oci_load_balancer_listener" "nginx_http_listener" {
   load_balancer_id         = oci_load_balancer_load_balancer.app_load_balancer.id
   name                     = "nginx_HTTP_listener"
   default_backend_set_name = oci_load_balancer_backend_set.app_http_backend_set.name
-  hostname_names           = [oci_load_balancer_hostname.app_hostname.name]
-  port                     = 80
+  port                     = 8080
   protocol                 = "HTTP"
 
   # hostname_names         = [oci_load_balancer_hostname.app_hostname.name]
@@ -101,5 +100,6 @@ resource "oci_load_balancer_listener" "nginx_https_listener" {
   ssl_configuration {
     certificate_name        = oci_load_balancer_certificate.load_balancer_certificate.certificate_name
     verify_peer_certificate = false
+    protocols               = ["TLSv1.2", "TLSv1.3"] # Enable TLS 1.2 and 1.3
   }
 }

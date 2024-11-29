@@ -8,9 +8,8 @@ module "oci-network" {
   subnet_cidr_block      = var.subnet_cidr_block
   egress_security_rules  = var.egress_security_rules
   ingress_security_rules = var.ingress_security_rules
-
-  my_public_ip   = var.my_public_ip
-  instance_count = var.instance_count
+  my_public_ip           = var.my_public_ip
+  instance_count         = var.instance_count
 }
 
 module "oci-instance" {
@@ -22,7 +21,10 @@ module "oci-instance" {
   ssh_private_key   = var.ssh_private_key
   ssh_public_key    = var.ssh_public_key
   docker_secret_key = var.docker_secret_key
-  instance_count    = var.instance_count
+
+  vcn_cidr_block = var.vcn_cidr_block
+  my_public_ip   = var.my_public_ip
+  instance_count = var.instance_count
 
   # arg
   lb_id                      = module.oci-network.lb_id
@@ -38,6 +40,7 @@ module "cloudflare" {
   cloudflare_api_token = var.cloudflare_api_token
 
   app_node       = module.oci-instance.app_node
+  lb_public_ip   = module.oci-network.lb_public_ip
   instance_count = var.instance_count
 }
 

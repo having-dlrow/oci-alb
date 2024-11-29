@@ -6,7 +6,7 @@ resource "oci_load_balancer_backend" "app_http_backend" {
   backendset_name  = var.app_http_backend_set_name
   ip_address       = oci_core_instance.app_node[count.index].public_ip
   load_balancer_id = var.lb_id
-  port             = 80
+  port             = 8080
 }
 
 resource "oci_load_balancer_backend" "app_https_backend" {

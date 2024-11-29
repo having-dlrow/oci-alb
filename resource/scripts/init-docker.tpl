@@ -4,7 +4,10 @@ runcmd:
   - apt-get update -y
   - echo "Hello World. The time is now $(date -R)!" | tee /root/output.txt
   # Install required packages
-  - apt-get install -y apt-transport-https ca-certificates curl software-properties-common lsb-release git net-tools iptables-persistent
+  - apt-get install -y apt-transport-https ca-certificates curl software-properties-common lsb-release git net-tools ufw nmap
+  # - apt install iptables-persistent
+  # Install and configure chrony for NTP synchronization
+  - apt-get install -y chrony && timedatectl set-timezone Asia/Seoul && systemctl enable chrony && systemctl start chrony && chronyc tracking
   # install docker
   - mkdir -p /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -19,7 +22,3 @@ runcmd:
   - sudo systemctl enable docker
   # Git login
   - docker login ghcr.io -u having-dlrow -p ${docker_secret_key}
-  # firewall
-  # - ufw allow 443
-  # - ufw allow 3306
-  # - ufw enable
